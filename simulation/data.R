@@ -1,20 +1,88 @@
 library(Matrix)
+source('mrlasso.R')
 
-get.beta <- function(m, d = 10000, s = 1)
+
+beta.values.1 <- function(mu, delta, eps = 0)
 {
-  beta = Matrix(0, d, m, sparse = T)
-  beta[1:2,] = s
- 
-  for(k in 1:m)
-    beta[k+2, k] = s * 8
-  return(beta)
+  z = rbinom(1, 1, 1-eps)
+  if(z)
+    return(rnorm(1, mean = mu, sd = 0.25))
+  else
+  {
+    return(runif(1, mu + delta, mu + delta + 1))
+  }
 }
 
 
-get.beta0 <- function(d = 10000, s = 1)
+beta.values.2 <- function(delta)
 {
+  r = 0
+  if(rbinom(1, 1, 0.5))
+    r = runif(1, delta, delta + 1)
+  return(r)
+}
+
+
+
+
+
+
+
+get.beta <- function(m, d = 10000, s = 5, s.extra = 15, snr = 1, outlier.dist = 10, seed = 0)
+{
+  set.seed(seed)
+  BETA = matrix(0, d, m)
+  for(i in 1:s)
+  {
+    for(j in 1:m)
+    {
+      BETA[i, j] = beta.values.1(mu = snr, delta = outlier.dist, eps = 0.1)
+    }
+  }
+  for(i in (s+1):(s + s.extra))
+  {
+    j = sample.int(m, size = 1)
+    BETA[i, j] = beta.values.2(delta = snr + m * outlier.dist)
+  }
+  BETA = Matrix(BETA, sparse = T)
+
+  
+  return(BETA)
+}
+
+
+get.beta.test <- function(m, d = 10000, s = 5, snr = 1, outlier.dist = 10, seed = 0)
+{
+  set.seed(seed)
+  BETA = matrix(0, d, m)
+  for(i in 1:s)
+  {
+    for(j in 1:m)
+    {
+      BETA[i, j] = beta.values.1(mu = snr, delta = outlier.dist, eps = 0)
+    }
+  }
+  
+  BETA = Matrix(BETA, sparse = T)
+  
+  
+  return(BETA)
+}
+
+
+get.beta0.mrlasso <- function(BETA, s = 5, s.extra = 15)
+{
+  d = BETA@Dim[1]
   beta = Matrix(0, d+1, 1, sparse = T)
-  beta[2:3] = s
+  beta[2:(s + s.extra + 1)] = apply(BETA[1:(s + s.extra), ], 1, function(x){return(mr.lasso(x, eta = 3))})
+  return(beta)
+}
+
+get.beta0.adele <- function(BETA)
+{
+  d = BETA@Dim[1]
+  beta = Matrix(0, d+1, 1, sparse = T)
+  beta[2:(d+1)] = apply(BETA, 1, mean)
   return(beta)
 }
 
@@ -46,20 +114,20 @@ get.y <- function(beta, x, noise = 0.05)
   y = list()
   for(k in 1:m)
   {
-    ind = c(1, 2, k+2)
-    y[[k]] = x[[k]][, ind] %*% beta[ind, k] + rnorm(n) * noise
+    y[[k]] = x[[k]] %*% beta[, k] + rnorm(n) * noise
   }
   return(y)
 }
 
 
-get.data <- function(m, d, n, s = 1, noise = 0.05)
+get.data <- function(m = 5, d = 100, n = 20, snr = 1, noise = 0.05, s = 5, s.extra = 15, outlier.dist = 10, seed = seed)
 {
-  p = list(m = m, n = n, d = d, s = s, noise = noise)
-  beta = get.beta(m, d, s = s)
-  beta.mrlasso = get.beta0(d, s= s)
-  beta.adele = beta.mrlasso
-  beta.adele[(3+1):(3+m)] = s * 8/m
+  p = list(m = m, n = n, d = d, s = s, s.extra = s.extra,
+           noise = noise, snr = snr, outlier.dist = outlier.dist)
+  beta = get.beta(m, d = d, s = s, s.extra = s.extra,
+                  snr = snr, outlier.dist = outlier.dist, seed = seed)
+  beta.mrlasso = get.beta0.mrlasso(beta, s = s, s.extra = s.extra)
+  beta.adele = get.beta0.adele(beta)
   
   
   x = get.x(n, m, d)
@@ -67,4 +135,19 @@ get.data <- function(m, d, n, s = 1, noise = 0.05)
   return(list(x = x, y = y, beta.adele = beta.adele, beta.mrlasso = beta.mrlasso, pars = p, beta = beta))
 }
 
+
+get.data.test <- function(m = 5, d = 100, n = 20, snr = 1, noise = 0.05, s = 5, s.extra = 15, outlier.dist = 10, seed = seed)
+{
+  p = list(m = m, n = n, d = d, s = s, s.extra = s.extra,
+           noise = noise, snr = snr, outlier.dist = outlier.dist)
+  beta = get.beta.test(m, d = d, s = s,
+                  snr = snr, outlier.dist = outlier.dist, seed = seed)
+  beta.mrlasso = get.beta0.mrlasso(beta, s = s, s.extra = s.extra)
+  beta.adele = get.beta0.adele(beta)
+  
+  
+  x = get.x(n, m, d)
+  y = get.y(beta, x, noise = noise)
+  return(list(x = x, y = y, beta.adele = beta.adele, beta.mrlasso = beta.mrlasso, pars = p, beta = beta))
+}
 

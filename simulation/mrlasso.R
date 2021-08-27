@@ -74,3 +74,37 @@ get.mrlasso.cv <- function(local.obj, mrlasso.dense, data.valid, lambda = 1)
 
 
 
+
+eval.mrlasso <- function(eta, local.obj, beta.mrlasso)
+{
+  mrlasso.dense = get.mrlasso.dense(local.obj, eta = eta)
+  
+  l2.mrlasso.dense = l2.norm(mrlasso.dense$beta - beta.mrlasso)
+  
+  t.global = l.infty.norm(mrlasso.dense$beta - beta.mrlasso)
+  mrlasso.sparse = soft.th(mrlasso.dense$beta, t.global)
+  l2.mrlasso.sparse = l2.norm(mrlasso.sparse - beta.mrlasso)
+  return(c(l2.mrlasso.dense, l2.mrlasso.sparse))
+}
+
+get.best.eta <- function(local.obj, beta.mrlasso)
+{
+  start = 0
+  
+  etas = 1:10
+  l2s = rep(0, 10)
+  for(i in 1:10)
+     l2s[i] = eval.mrlasso(etas[i], local.obj = local.obj,
+                          beta.mrlasso = beta.mrlasso)[2]
+  eta = max(etas[l2s == min(l2s)])
+  
+  etas = (1:10)/10 + eta
+  l2s = rep(0, 10)
+  for(i in 1:10)
+    l2s[i] = eval.mrlasso(etas[i], local.obj = local.obj,
+                          beta.mrlasso = beta.mrlasso)[2]
+  eta = max(etas[l2s == min(l2s)])
+  return(eta)
+  
+}
+

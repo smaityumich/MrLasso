@@ -1,4 +1,7 @@
-setwd('~/MRLASSO/simulation')
+## set project path in local machine 
+project.path = "~/projects/MrLasso/"
+
+setwd(paste(project.path, "simulation/", sep =""))
 source('data.R')
 source('lasso.R')
 source('utils.R')
@@ -7,14 +10,31 @@ source('mrlasso.R')
 library(rjson)
 
 
+n = 100; m = 5; d = 2000; s = 5; s.extra = 15;
+noise = 0.05; snr = 4;
+outlier.dist = 10; seed = 0;
 
-instance.i <- function(n = 100, m = 5, d = 2000, s = 5, noise = 0.05)
+
+
+instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
+                       noise = 0.05, snr = 4,
+                       outlier.dist = 10, seed = 0)
 {
-  data.train = get.data(m, d, n, s, noise)
+  data.train = get.data(m = m, d = d, n = n, snr = snr, 
+                        noise = noise, s = s, s.extra = s.extra,
+                        outlier.dist = outlier.dist, seed = seed)
+  
+  data.test = get.data.test(m = 2000, d = d, n = 10, snr = snr, 
+                        noise = noise, s = s, s.extra = 0,
+                        outlier.dist = outlier.dist, seed = seed+10000)
   # data.valid = get.data(m, d, 100, s, noise)
+
+  
   
   global.obj = global.lasso(data.train)
   l2.global = l2.norm(global.obj$beta - data.train$beta.adele)
+  error.global = eval.central.beta(data.test, global.obj$beta)
+  
   
   local.obj = local.lasso(data.train)
   
@@ -27,83 +47,90 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, noise = 0.05)
   
  
   adele.sparse = soft.th(adele.dense$beta, t.global)
-  
+ 
   l2.adele.sparse = l2.norm(adele.sparse - data.train$beta.adele)
   
-  ret.obj = list(m = m, n = n, d = d, noise = noise, 
-                 l2.global = l2.global, l2.adele.dense = l2.adele.dense,
-                 l2.adele.sparse = l2.adele.sparse)
+  error.adele.dense = eval.central.beta(data.test, adele.dense$beta)
+  error.adele.sparse = eval.central.beta(data.test, adele.sparse)
+  
+  print("adele....")
+  print("true:")
+  print(as.numeric(data.train$beta.adele)[1:25])
+  print("estimate (sparse):")
+  print(as.numeric(adele.sparse)[1:25])
+  print("l2 error:")
+  print(l2.adele.sparse)
+  print("test data error:")
+  print(error.adele.sparse)
+  
+  
   
   ## MRLASSO
+  beta.mrlasso = data.train$beta.mrlasso
+  eta = get.best.eta(local.obj, beta.mrlasso)
   
-  etas = c(2, 4, 8, 16, 32, 64)
+  mrlasso.dense = get.mrlasso.dense(local.obj, eta = eta)
   
-  for(i in 1:length(etas))
-  {
-    eta = etas[i]
-    beta = data.train$beta
-    
-    beta.mrlasso = data.train$beta.mrlasso
-    ml.eta <- function(x)
-    {
-      return(mr.lasso(x, eta = eta))
-    }
-    beta.mrlasso[2:(d+1)] = apply(beta, 1, ml.eta)
-    
-    mrlasso.dense = get.mrlasso.dense(local.obj, eta = eta)
-    l2.mrlasso.dense = l2.norm(mrlasso.dense$beta - beta.mrlasso)
-    
-    t.global = l.infty.norm(mrlasso.dense$beta - beta.mrlasso)
-    mrlasso.sparse = soft.th(mrlasso.dense$beta, t.global)
-    l2.mrlasso.sparse = l2.norm(mrlasso.sparse - beta.mrlasso)
-    
-    ret.obj[[paste('l2.mrlasso.dense.', eta, sep = '')]] = l2.mrlasso.dense
-    ret.obj[[paste('l2.mrlasso.sparse.', eta, sep = '')]] = l2.mrlasso.sparse
-  }
+  l2.mrlasso.dense = l2.norm(mrlasso.dense$beta - beta.mrlasso)
   
+  t.global = l.infty.norm(mrlasso.dense$beta - beta.mrlasso)
+  mrlasso.sparse = soft.th(mrlasso.dense$beta, t.global)
+  l2.mrlasso.sparse = l2.norm(mrlasso.sparse - beta.mrlasso)
   
+  error.mrlasso.dense = eval.central.beta(data.test, mrlasso.dense$beta)
+  error.mrlasso.sparse = eval.central.beta(data.test, mrlasso.sparse)
   
+  print("MrLasso....")
+  print("true:")
+  print(as.numeric(data.train$beta.mrlasso)[1:25])
+  print("estimate (sparse):")
+  print(as.numeric(mrlasso.sparse)[1:25])
+  print("l2 error:")
+  print(l2.mrlasso.sparse)
+  print("test data error:")
+  print(error.mrlasso.sparse)
   
-
- 
-  
-  
+  ret.obj = list(m = m, n = n, d = d, noise = noise, s =  s,
+                 l2.global = l2.global,
+                 error.global = error.global,
+                 l2.adele.dense = l2.adele.dense,
+                 l2.adele.sparse = l2.adele.sparse,
+                 error.adele.dense = error.adele.dense,
+                 error.adele.sparse = error.adele.sparse,
+                 l2.mrlasso.dense = l2.mrlasso.dense,
+                 l2.mrlasso.sparse = l2.mrlasso.sparse,
+                 error.mrlasso.dense = error.mrlasso.dense,
+                 error.mrlasso.sparse = error.mrlasso.sparse)
   
   return(ret.obj)
 }
 
 
 
-instance <- function(n = 100, m = 5, d = 2000, s = 1, noise = 0.25, iter = 50)
-{
-  l2 = matrix(0, iter, 5)
-  l2 = data.frame(l2)
-  colnames(l2) <- c('l2.global', 'l2.adele.dense',
-                    'l2.adele.sparse', 'l2.mrlasso.dense',
-                    'l2.mrlasso.sparse', 'm', 'n', 'sigma')
-  for(i in 1:iter)
-  {
-    e = instance.i(n = n, m = m, d = d, s = s, noise = noise)
-    l2[i, 1] = e$l2.global
-    l2[i, 2] = e$l2.adele.dense
-    l2[i, 3] = e$l2.adele.sparse
-    l2[i, 4] = e$l2.mrlasso.dense
-    l2[i, 5] = e$l2.mrlasso.sparse
-    l2[i, 6] = e$m
-    l2[i, 7] = e$n
-    l2[i, 8] = e$noise
-  }
-  return(l2)
-}
+# instance <- function(n = 100, m = 5, d = 2000, s = 5, 
+#                      s.extra = 15, noise = 0.25, iter = 50)
+# {
+#   e = instance.i(n = n, m = m, d = d, s = s, noise = noise)
+#   l2 = matrix(0, iter, length(e))
+#   l2 = as.data.frame(l2)
+#   colnames(l2) <- names(e)
+#   l2[1, ] = unlist(e)
+#   
+#   for(i in 2:iter)
+#   {
+#     e = instance.i(n = n, m = m, d = d, s = s,
+#                    noise = noise, s.extra = s.extra)
+#     l2[i, ] = unlist(e)
+#   }
+#   return(l2)
+# }
 
 
-v.sigma = c(rep(0.1, 10), rep(0.25, 10))
-v.n = c(100 * 2^(0:4), rep(100, 5))
-v.n = c(v.n, v.n)
-v.m = c(rep(5, 5) ,2^(1:5))
-v.m = c(v.m, v.m)
+v.n = c(100 * 2^(0:4), rep(200, 5), rep(200, 5))
+v.m = c(rep(5, 5), 2^(1:5), rep(5, 5))
+v.s = c(rep(5, 5), rep(5, 5), 4 * 2^(0:4))
 
-pars = data.frame(sigma = v.sigma, m = v.m, n = v.n)
+pars = data.frame(m = v.m, n = v.n, s = v.s)
 
 
 
@@ -113,16 +140,21 @@ args = commandArgs(trailingOnly=TRUE)
 i = as.integer(args[1])
 
 
-index = i %/% 50 + 1
-sig = pars[index, 1]
-m = pars[index, 2]
-n = pars[index, 3]
+index = i %/% 200 + 1
+m = as.integer(pars[index, 1])
+n = as.integer(pars[index, 2])
+s = as.integer(pars[index, 3])
 
-set.seed(i)
 
-l2 = instance.i(n = n, m = m, noise = sig, s = 5)
+if(m == 5)
+{
+  s.extra = 20
+} else {
+  s.extra = 10 * m
+}
+  
+l2.list = instance.i(n = n, m = m, noise = 0.25, s = s, snr = 4,  s.extra = s.extra, seed = i) 
 
-write(rjson::toJSON(l2), file = paste('l2/l2_', i, '.json', sep = ''))
-
+write(rjson::toJSON(l2.list), file = paste('summaries_part/l2_', i, '.json', sep = ''))
 
 
