@@ -91,19 +91,19 @@ get.best.eta <- function(local.obj, beta.mrlasso)
 {
   start = 0
   
-  etas = 1:10
-  l2s = rep(0, 10)
-  for(i in 1:10)
+  etas = seq(1, 10, by = 0.5)
+  l2s = rep(0, length(etas))
+  for(i in 1:length(etas))
      l2s[i] = eval.mrlasso(etas[i], local.obj = local.obj,
                           beta.mrlasso = beta.mrlasso)[2]
-  eta = max(etas[l2s == min(l2s)])
+  eta = as.numeric(quantile(etas[l2s == min(l2s)], probs = 0.2))
   
-  etas = (1:10)/10 + eta
+  etas = seq(-5, 5, by = 1)/20 + eta
   l2s = rep(0, 10)
   for(i in 1:10)
     l2s[i] = eval.mrlasso(etas[i], local.obj = local.obj,
                           beta.mrlasso = beta.mrlasso)[2]
-  eta = max(etas[l2s == min(l2s)])
+  eta = min(etas[l2s == min(l2s)])
   return(eta)
   
 }

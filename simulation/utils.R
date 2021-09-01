@@ -24,6 +24,7 @@ soft.th <- function(beta, lambda = 0.1)
 
 
 
+
 eval.central.beta <- function(data.test, beta.central)
 {
   s = 0
@@ -35,9 +36,9 @@ eval.central.beta <- function(data.test, beta.central)
   {
     x.i = x[[i]]
     y.i = y[[i]]
-    count = count + length(y.i)
-    error.i = y.i - x.i %*% beta.central[-1] - beta.central[1]
-    s = s + sum(error.i^2)
+    count = count + 1
+    error.i = y.i - x.i %*% beta.central[-1]
+    s = s + var(error.i)
   }
-  return(s/count)
+  return((s/count))
 }

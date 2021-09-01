@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --output=logs/op-sim_%A_%a.out
-#SBATCH --array=0-2999
+#SBATCH --array=0-999
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=10gb
+#SBATCH --mem-per-cpu=20gb
 #SBATCH --time=1:00:00
 #SBATCH --account=yuekai1
 #SBATCH --mail-type=NONE

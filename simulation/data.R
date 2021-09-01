@@ -2,11 +2,11 @@ library(Matrix)
 source('mrlasso.R')
 
 
-beta.values.1 <- function(mu, delta, eps = 0)
+beta.values.1 <- function(mu, delta, eps = 0, sd = 0.1)
 {
   z = rbinom(1, 1, 1-eps)
   if(z)
-    return(rnorm(1, mean = mu, sd = 0.25))
+    return(rnorm(1, mean = mu, sd = sd))
   else
   {
     return(runif(1, mu + delta, mu + delta + 1))
@@ -36,13 +36,13 @@ get.beta <- function(m, d = 10000, s = 5, s.extra = 15, snr = 1, outlier.dist = 
   {
     for(j in 1:m)
     {
-      BETA[i, j] = beta.values.1(mu = snr, delta = outlier.dist, eps = 0.1)
+      BETA[i, j] = beta.values.1(mu = snr, delta = outlier.dist, eps = 0)
     }
   }
   for(i in (s+1):(s + s.extra))
   {
     j = sample.int(m, size = 1)
-    BETA[i, j] = beta.values.2(delta = snr + m * outlier.dist)
+    BETA[i, j] = beta.values.2(delta = snr + outlier.dist)
   }
   BETA = Matrix(BETA, sparse = T)
 
@@ -59,7 +59,7 @@ get.beta.test <- function(m, d = 10000, s = 5, snr = 1, outlier.dist = 10, seed 
   {
     for(j in 1:m)
     {
-      BETA[i, j] = beta.values.1(mu = snr, delta = outlier.dist, eps = 0)
+      BETA[i, j] = beta.values.1(mu = snr, delta = outlier.dist, eps = 0, sd = 0)
     }
   }
   

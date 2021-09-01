@@ -2,9 +2,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
+outlier_dist = 10
 
 def get_plot(result, mtype):
     
+    global outlier_dist
     mpl.rcParams['text.usetex'] = True
     mpl.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
 
@@ -12,16 +14,17 @@ def get_plot(result, mtype):
     labelsize = 18
     markersize = 8
 
-    fig, ax = plt.subplots(1, 3, figsize = (17, 5), constrained_layout = True)
+    fig, ax = plt.subplots(2, 2, figsize = (8, 6), constrained_layout = True)
 
 
 
 
     pars = {'m': 5}
-    index = 0
+    index = 0,0
     result1 = result
     result1 = result1.loc[result1['m'] == 5]
     result1 = result1.loc[result1['s'] == 5]
+    result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
 
     types = ['sparse']
     mks = ['x']
@@ -33,7 +36,7 @@ def get_plot(result, mtype):
     if mtype == "l2.":
         ylab = r'$\|\hat\beta_0-\beta_0\|_2$'
     elif mtype == "error.":
-        ylab = r'$E_{\beta \sim F}\Big[E_{x,y\sim P_{\beta}}\big[(y - x^\top \hat \beta_0)^2\big]\Big]$'
+        ylab = r'$E_{\beta}\Big[E_{(x,y)}\big[(y - x^\top \hat \beta_0)^2\big]\Big]$'
     else:
         ylab = ""
 
@@ -59,7 +62,8 @@ def get_plot(result, mtype):
     result1 = result
     result1 = result1.loc[result['m'] != 5]
     result1 = result1.loc[result['s'] == 5]
-    index = 1
+    result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
+    index = 0, 1
 
     types = ['sparse']
     mks = ['x']
@@ -86,9 +90,10 @@ def get_plot(result, mtype):
 
 
     result1 = result
-    result1 = result1.loc[result['m'] == 5]
-    result1 = result1.loc[result['s'] != 5]
-    index = 2
+    result1 = result1.loc[result1['m'] == 5]
+    result1 = result1.loc[result1['s'] != 5]
+    result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
+    index = 1, 0
 
     types = ['sparse']
     mks = ['x']
@@ -110,13 +115,45 @@ def get_plot(result, mtype):
     ax[index].set_yscale('log')
     ax[index].set_xlabel(r'$s\big(\beta_{0, \text{ADELE}}\big)$', fontsize = labelsize)
     ax[index].set_xticks(x)
+    ax[index].set_ylabel(ylab, labelpad = 0, fontsize = labelsize)
+    ax[index].set_xticklabels(x, fontsize = fontsize)
+    ax[index].tick_params(axis = 'y', labelsize = fontsize)
+    
+
+    result1 = result
+    result1 = result1.loc[result1['m'] == 5]
+    result1 = result1.loc[result1['s'] == 5]
+    result1 = result1.loc[result1['n'] == 200]
+    result1 = result1.loc[result1['outlier.dist'] != 10]
+    index = 1, 1
+
+    types = ['sparse']
+    mks = ['x']
+
+    estimators = ['adele', 'mrlasso']
+    cols = ['orange', 'blue']
+    mks = ['x', 'o']
+
+
+    for est, col, mk in zip(estimators, cols, mks):
+        typ = 'sparse'
+        result2 = result1
+        msr = mtype + est + '.' + typ
+
+        mean, std = result2[msr]['mean'], result2[msr]['std']
+        x = result2['outlier.dist']
+        ax[index].errorbar(x, mean, std, linestyle = '-', color = col, marker = mk, markersize = markersize)
+    ax[index].set_xscale('log')
+    ax[index].set_yscale('log')
+    ax[index].set_xlabel(r'$\delta$', fontsize = labelsize)
+    ax[index].set_xticks(x)
     ax[index].set_xticklabels(x, fontsize = fontsize)
     ax[index].tick_params(axis = 'y', labelsize = fontsize)
 
 
 
 
-    estimators = ['ADELE', 'MrLasso']
+    estimators = ['SHIR', 'MrLasso']
     cols = ['orange', 'blue']
     mks = ['x', 'o']
 
@@ -128,9 +165,9 @@ def get_plot(result, mtype):
         labels.append(est)
 
         lines.append(Line2D([0], [0], linestyle = '-', color = col, marker = mk, markersize = markersize))
-
-    ax[0].legend(lines, labels, fontsize = fontsize)
-    ax[1].legend(lines, labels, fontsize = fontsize)
-    ax[2].legend(lines, labels, fontsize = fontsize)
+    for i in [0, 1]:
+        for j in [0, 1]:
+            ax[i, j].legend(lines, labels, fontsize = fontsize)
+    
     
     return fig, ax

@@ -10,8 +10,8 @@ source('mrlasso.R')
 library(rjson)
 
 
-n = 100; m = 8; d = 2000; s = 4; s.extra = 15;
-noise = 0.25; snr = 4;
+n = 100; m = 5; d = 2000; s = 5; s.extra = 15;
+noise = 0.05; snr = 4;
 outlier.dist = 10; seed = 0;
 
 
@@ -25,7 +25,7 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
                         outlier.dist = outlier.dist, seed = seed)
   
   data.test = get.data.test(m = 2000, d = d, n = 10, snr = snr, 
-                        noise = 0, s = s, s.extra = 0,
+                        noise = noise, s = s, s.extra = 0,
                         outlier.dist = outlier.dist, seed = seed+10000)
   # data.valid = get.data(m, d, 100, s, noise)
 
@@ -98,7 +98,6 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
                  l2.adele.sparse = l2.adele.sparse,
                  error.adele.dense = error.adele.dense,
                  error.adele.sparse = error.adele.sparse,
-                 eta = eta,
                  l2.mrlasso.dense = l2.mrlasso.dense,
                  l2.mrlasso.sparse = l2.mrlasso.sparse,
                  error.mrlasso.dense = error.mrlasso.dense,
@@ -129,15 +128,13 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
 
 
 v.n = c(100 * 2^(0:4), rep(200, 5), rep(200, 5), rep(200, 5))
-v.m = c(rep(5, 5), 2*2^(1:5), rep(5, 5), rep(5, 5))
+v.m = c(rep(5, 5), 2^(1:5), rep(5, 5), rep(5, 5))
 v.s = c(rep(5, 5), rep(5, 5), 4 * 2^(0:4), rep(5, 5))
-v.od = c(rep(10, 5), rep(10, 5), rep(10, 5), 4 * 2^(0:4))
+v.od = c(rep(3, 5), rep(3, 5), rep(3, 5), 0.25 * 2^(0:4))
 
 pars = data.frame(m = v.m, n = v.n, s = v.s, od = v.od)
 
-n = 100; m = 8; d = 2000; s = 4; s.extra = 15;
-noise = 0.25; snr = 4;
-outlier.dist = 10; seed = 0;
+
 
 
 
@@ -145,7 +142,7 @@ args = commandArgs(trailingOnly=TRUE)
 i = as.integer(args[1])
 
 
-index = i %/% 50 + 1
+index = i %/% 200 + 1
 m = as.integer(pars[index, 1])
 n = as.integer(pars[index, 2])
 s = as.integer(pars[index, 3])
@@ -159,9 +156,8 @@ if(m == 5)
   s.extra = 10 * m
 }
   
-l2.list = instance.i(n = n, m = m, noise = 0.1, s = s, snr = 3,
-                     s.extra = s.extra, seed = i+3333,
-                     outlier.dist = od, d= 2000) 
+l2.list = instance.i(n = n, m = m, noise = 0.25, s = s, snr = 4,
+                     s.extra = s.extra, seed = i+500000000, outlier.dist = od) 
 
 write(rjson::toJSON(l2.list), file = paste('summaries_part/l2_', i, '.json', sep = ''))
 
