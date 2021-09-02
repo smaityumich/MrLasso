@@ -33,7 +33,10 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
   
   global.obj = global.lasso(data.train)
   l2.global = l2.norm(global.obj$beta - data.train$beta.adele)
-  error.global = eval.central.beta(data.test, global.obj$beta)
+  # error.global = eval.central.beta(data.test, global.obj$beta)
+  
+  error.global = eval.central.beta.th(global.obj$beta, snr = snr, s = s, noise = noise)
+
   
   
   local.obj = local.lasso(data.train)
@@ -50,8 +53,11 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
  
   l2.adele.sparse = l2.norm(adele.sparse - data.train$beta.adele)
   
-  error.adele.dense = eval.central.beta(data.test, adele.dense$beta)
-  error.adele.sparse = eval.central.beta(data.test, adele.sparse)
+  # error.adele.dense = eval.central.beta(data.test, adele.dense$beta)
+  # error.adele.sparse = eval.central.beta(data.test, adele.sparse)
+  # 
+  error.adele.dense = eval.central.beta.th(adele.dense$beta, snr = snr, s = s, noise = noise)
+  error.adele.sparse = eval.central.beta.th(adele.sparse, snr = snr, s = s, noise = noise)
   
   print("adele....")
   print("true:")
@@ -77,8 +83,11 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
   mrlasso.sparse = soft.th(mrlasso.dense$beta, t.global)
   l2.mrlasso.sparse = l2.norm(mrlasso.sparse - beta.mrlasso)
   
-  error.mrlasso.dense = eval.central.beta(data.test, mrlasso.dense$beta)
-  error.mrlasso.sparse = eval.central.beta(data.test, mrlasso.sparse)
+  # error.mrlasso.dense = eval.central.beta(data.test, mrlasso.dense$beta)
+  # error.mrlasso.sparse = eval.central.beta(data.test, mrlasso.sparse)
+    
+  error.mrlasso.dense = eval.central.beta.th( mrlasso.dense$beta, snr = snr, s = s, noise = noise)
+  error.mrlasso.sparse = eval.central.beta.th(mrlasso.sparse, snr = snr, s = s, noise = noise)
   
   print("MrLasso....")
   print("true:")
@@ -131,7 +140,7 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
 v.n = c(100 * 2^(0:4), rep(200, 5), rep(200, 5), rep(200, 5))
 v.m = c(rep(5, 5), 2*2^(1:5), rep(5, 5), rep(5, 5))
 v.s = c(rep(5, 5), rep(5, 5), 4 * 2^(0:4), rep(5, 5))
-v.od = c(rep(10, 5), rep(10, 5), rep(10, 5), 4 * 2^(0:4))
+v.od = c(rep(25, 5), 10*2^(1:5), rep(25, 5), 25 * 2^(seq(-2, 2, by = 1)))
 
 pars = data.frame(m = v.m, n = v.n, s = v.s, od = v.od)
 
@@ -156,11 +165,11 @@ if(m == 5)
 {
   s.extra = 20
 } else {
-  s.extra = 10 * m
+  s.extra = 20
 }
   
-l2.list = instance.i(n = n, m = m, noise = 0.1, s = s, snr = 3,
-                     s.extra = s.extra, seed = i+3333,
+l2.list = instance.i(n = n, m = m, noise = 0.1, s = s, snr = 5,
+                     s.extra = s.extra, seed = i+55999,
                      outlier.dist = od, d= 2000) 
 
 write(rjson::toJSON(l2.list), file = paste('summaries_part/l2_', i, '.json', sep = ''))

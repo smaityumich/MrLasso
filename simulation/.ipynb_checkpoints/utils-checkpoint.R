@@ -46,8 +46,8 @@ eval.central.beta <- function(data.test, beta.central)
 
 eval.central.beta.th <- function(beta.central, snr, s, noise)
 {
-  beta.central[2:(1+s)] =  beta.central[2:(1+s)] - snr
+  beta.central[2:(1+m)] =  beta.central[2:(1+m)] - snr
   r = sum(beta.central^2)
   r = r + noise^2
-  return(r)
+    return(r)
 }
