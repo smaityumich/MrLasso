@@ -2,9 +2,13 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-outlier_dist = 25
+outlier_dist = 10
 
 def get_plot(result, mtype):
+    
+    
+    alpha_shade = 0.1
+    col_shade = 'g'
     
     global outlier_dist
     mpl.rcParams['text.usetex'] = True
@@ -22,6 +26,7 @@ def get_plot(result, mtype):
     pars = {'m': 5}
     index = 0,0
     result1 = result
+    result1 = result1.loc[result1['eta.pre'] < 0]
     result1 = result1.loc[result1['m'] == 5]
     result1 = result1.loc[result1['s'] == 5]
     result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
@@ -49,6 +54,15 @@ def get_plot(result, mtype):
         mean, std = result2[msr]['mean'], result2[msr]['std']
         x = result2['n']
         ax[index].errorbar(x, mean, std, linestyle = '-', color = col, marker = mk, markersize = markersize)
+        
+        
+        if mtype == "l2.":
+            msr = 'eta'
+            mean, std = result2[msr]['mean'], result2[msr]['std']
+            ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+            ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
+            
+            
     ax[index].set_xscale('log')
     ax[index].set_yscale('log')
     ax[index].set_xlabel('$n_k$', fontsize = labelsize)
@@ -60,6 +74,8 @@ def get_plot(result, mtype):
 
 
     result1 = result
+    
+    result1 = result1.loc[result1['eta.pre'] < 0]
     result1 = result1.loc[result['m'] != 5]
     index = 0, 1
 
@@ -79,6 +95,13 @@ def get_plot(result, mtype):
         mean, std = result2[msr]['mean'], result2[msr]['std']
         x = result2['m']
         ax[index].errorbar(x, mean, std, linestyle = '-', color = col, marker = mk, markersize = markersize)
+        
+        if mtype == "l2.":
+            msr = 'eta'
+            mean, std = result2[msr]['mean'], result2[msr]['std']
+            ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+            ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
+            
     ax[index].set_xscale('log')
     ax[index].set_yscale('log')
     ax[index].set_xlabel('$m$', fontsize = labelsize)
@@ -88,7 +111,7 @@ def get_plot(result, mtype):
 
 
     result1 = result
-    result1 = result1.loc[result1['m'] == 5]
+    result1 = result1.loc[result1['eta.pre'] < 0]
     result1 = result1.loc[result1['s'] != 5]
     result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
     index = 1, 0
@@ -109,9 +132,16 @@ def get_plot(result, mtype):
         mean, std = result2[msr]['mean'], result2[msr]['std']
         x = result2['s']
         ax[index].errorbar(x, mean, std, linestyle = '-', color = col, marker = mk, markersize = markersize)
+        
+        if mtype == "l2.":
+            msr = 'eta'
+            mean, std = result2[msr]['mean'], result2[msr]['std']
+            ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+            ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
+            
     ax[index].set_xscale('log')
     ax[index].set_yscale('log')
-    ax[index].set_xlabel(r'$s\big(\beta_{0, \text{ADELE}}\big)$', fontsize = labelsize)
+    ax[index].set_xlabel(r'$s$', fontsize = labelsize)
     ax[index].set_xticks(x)
     ax[index].set_ylabel(ylab, labelpad = 0, fontsize = labelsize)
     ax[index].set_xticklabels(x, fontsize = fontsize)
@@ -119,9 +149,7 @@ def get_plot(result, mtype):
     
 
     result1 = result
-    result1 = result1.loc[result1['m'] == 5]
-    result1 = result1.loc[result1['s'] == 5]
-    result1 = result1.loc[result1['n'] == 200]
+    result1 = result1.loc[result1['eta.pre'] > 0]
     index = 1, 1
 
     types = ['sparse']
@@ -138,11 +166,11 @@ def get_plot(result, mtype):
         msr = mtype + est + '.' + typ
 
         mean, std = result2[msr]['mean'], result2[msr]['std']
-        x = result2['outlier.dist']
+        x = result2['eta.pre']
         ax[index].errorbar(x, mean, std, linestyle = '-', color = col, marker = mk, markersize = markersize)
-    ax[index].set_xscale('log')
-    ax[index].set_yscale('log')
-    ax[index].set_xlabel(r'$\delta$', fontsize = labelsize)
+   
+    
+    ax[index].set_xlabel(r'$\eta$', fontsize = labelsize)
     ax[index].set_xticks(x)
     ax[index].set_xticklabels(x, fontsize = fontsize)
     ax[index].tick_params(axis = 'y', labelsize = fontsize)
@@ -154,17 +182,22 @@ def get_plot(result, mtype):
     cols = ['orange', 'blue']
     mks = ['x', 'o']
 
-    labels = []
-    lines = []
+    
 
-
-    for est, col, mk in zip(estimators, cols, mks):
-        labels.append(est)
-
-        lines.append(Line2D([0], [0], linestyle = '-', color = col, marker = mk, markersize = markersize))
     for i in [0, 1]:
         for j in [0, 1]:
+            labels = []
+            lines = []
+
+
+            for est, col, mk in zip(estimators, cols, mks):
+                labels.append(est)
+                lines.append(Line2D([0], [0], linestyle = '-', color = col, marker = mk, markersize = markersize))
+            if i*j == 0 and mtype == "l2.":
+                lines.append(Line2D([0], [0], linestyle = ':', color = 'b', marker = 'o', markersize = markersize))
+                labels.append(r'$\hat\eta$')
             ax[i, j].legend(lines, labels, fontsize = fontsize)
+            
     
     
     return fig, ax
@@ -196,6 +229,7 @@ def get_plot2(result, mtype):
     pars = {'m': 5}
     index = 0
     result1 = result
+    result1 = result1.loc[result1['eta.pre'] < 0]
     result1 = result1.loc[result1['m'] == 5]
     result1 = result1.loc[result1['s'] == 5]
     result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
@@ -234,6 +268,7 @@ def get_plot2(result, mtype):
 
 
     result1 = result
+    result1 = result1.loc[result1['eta.pre'] < 0]
     result1 = result1.loc[result['m'] != 5]
     index = 1
 
@@ -262,6 +297,7 @@ def get_plot2(result, mtype):
 
 
     result1 = result
+    result1 = result1.loc[result1['eta.pre'] < 0]
     result1 = result1.loc[result1['m'] == 5]
     result1 = result1.loc[result1['s'] != 5]
     result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
