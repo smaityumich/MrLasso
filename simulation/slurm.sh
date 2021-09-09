@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --output=logs/op-sim_%A_%a.out
-#SBATCH --array=0-1599
+#SBATCH --array=0-139
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=20gb

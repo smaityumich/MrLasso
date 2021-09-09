@@ -14,8 +14,11 @@ mr.lasso <- function(x, eta, tol = 1e-9, max.iter = 1000)
       mu1 = mean(y) #+ rnorm(1) * 0.05 / (iter ^ 2)
       error = abs(mu0-mu1) #
       mu0=mu1
-      if(is.na(mu0))
+      if(!is.finite(error))
+      {
         mu0 = mean(x) +  rnorm(1) * 0.05
+        error = 1
+      }
       iter = iter+1
     }
     return(mu0)
@@ -75,6 +78,8 @@ get.mrlasso.cv <- function(local.obj, mrlasso.dense, data.valid, lambda = 1)
 
 
 
+
+
 eval.mrlasso <- function(eta, local.obj, beta.mrlasso)
 {
   mrlasso.dense = get.mrlasso.dense(local.obj, eta = eta)
@@ -94,7 +99,7 @@ get.best.eta <- function(local.obj, beta.mrlasso)
   etas = seq(1, 10, by = 0.5)
   l2s = rep(0, length(etas))
   for(i in 1:length(etas))
-     l2s[i] = eval.mrlasso(etas[i], local.obj = local.obj,
+    l2s[i] = eval.mrlasso(etas[i], local.obj = local.obj,
                           beta.mrlasso = beta.mrlasso)[2]
   eta = as.numeric(quantile(etas[l2s == min(l2s)], probs = 0.2))
   
@@ -103,6 +108,60 @@ get.best.eta <- function(local.obj, beta.mrlasso)
   for(i in 1:10)
     l2s[i] = eval.mrlasso(etas[i], local.obj = local.obj,
                           beta.mrlasso = beta.mrlasso)[2]
+  eta = min(etas[l2s == min(l2s)])
+  return(eta)
+  
+}
+
+
+
+eval.mrlasso.validation <- function(eta, local.obj, data.valid, beta.mrlasso)
+{
+  mrlasso.dense = get.mrlasso.dense(local.obj, eta = eta)
+  
+  
+  t.global = l.infty.norm(mrlasso.dense$beta - beta.mrlasso)
+  mrlasso.sparse = soft.th(mrlasso.dense$beta, t.global)
+  beta = data.valid$beta
+  
+  s = 0
+  for(i in 1:length(data.valid[[1]]))
+  {
+    beta.i = beta[, i]
+    delta.i = beta.i - beta.mrlasso[-1]
+    delta.i.hat = local.obj[[i]]$beta-mrlasso.sparse
+    t.delta = l.infty.norm(delta.i - delta.i.hat[-1])
+    delta.sparse = soft.th(delta.i.hat, t.delta)
+    
+    beta.sparse = mrlasso.sparse + delta.sparse
+    
+    x = data.valid$x[[i]]
+    y = data.valid$y[[i]]
+    local.error = y - x%*%beta.sparse[-1] - beta.sparse[1]
+    s = s + mean(local.error^2)
+  }
+  s = s/length(data.valid[[1]])
+  return(s)
+}
+
+get.best.eta.validation <- function(local.obj, data.valid, beta.mrlasso)
+{
+  start = 0
+  
+  etas = seq(1, 10, by = 1)
+  l2s = rep(0, length(etas))
+  for(i in 1:length(etas))
+    l2s[i] = eval.mrlasso.validation(etas[i], local.obj = local.obj,
+                                     data.valid = data.valid, 
+                                     beta.mrlasso = beta.mrlasso)
+  eta = as.numeric(quantile(etas[l2s == min(l2s)], probs = 0.2))
+  
+  etas = seq(-5, 5, by = 1)/10 + eta
+  l2s = rep(0, 10)
+  for(i in 1:10)
+    l2s[i] = eval.mrlasso.validation(etas[i], local.obj = local.obj,
+                                     data.valid = data.valid, 
+                                     beta.mrlasso = beta.mrlasso)
   eta = min(etas[l2s == min(l2s)])
   return(eta)
   
