@@ -2,7 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-outlier_dist = 10
+outlier_dist = 15
 
 def get_plot(result, mtype):
     
@@ -56,11 +56,11 @@ def get_plot(result, mtype):
         ax[index].errorbar(x, mean, std, linestyle = '-', color = col, marker = mk, markersize = markersize)
         
         
-        if mtype == "l2.":
-            msr = 'eta'
-            mean, std = result2[msr]['mean'], result2[msr]['std']
-            ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
-            ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
+#         if mtype == "l2.":
+#             msr = 'eta'
+#             mean, std = result2[msr]['mean'], result2[msr]['std']
+#             ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+#             ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
             
             
     ax[index].set_xscale('log')
@@ -96,11 +96,11 @@ def get_plot(result, mtype):
         x = result2['m']
         ax[index].errorbar(x, mean, std, linestyle = '-', color = col, marker = mk, markersize = markersize)
         
-        if mtype == "l2.":
-            msr = 'eta'
-            mean, std = result2[msr]['mean'], result2[msr]['std']
-            ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
-            ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
+#         if mtype == "l2.":
+#             msr = 'eta'
+#             mean, std = result2[msr]['mean'], result2[msr]['std']
+#             ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+#             ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
             
     ax[index].set_xscale('log')
     ax[index].set_yscale('log')
@@ -133,11 +133,11 @@ def get_plot(result, mtype):
         x = result2['s']
         ax[index].errorbar(x, mean, std, linestyle = '-', color = col, marker = mk, markersize = markersize)
         
-        if mtype == "l2.":
-            msr = 'eta'
-            mean, std = result2[msr]['mean'], result2[msr]['std']
-            ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
-            ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
+#         if mtype == "l2.":
+#             msr = 'eta'
+#             mean, std = result2[msr]['mean'], result2[msr]['std']
+#             ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+#             ax[index].fill_between(x, 6, 1, alpha = alpha_shade, color = col_shade)
             
     ax[index].set_xscale('log')
     ax[index].set_yscale('log')
@@ -193,9 +193,9 @@ def get_plot(result, mtype):
             for est, col, mk in zip(estimators, cols, mks):
                 labels.append(est)
                 lines.append(Line2D([0], [0], linestyle = '-', color = col, marker = mk, markersize = markersize))
-            if i*j == 0 and mtype == "l2.":
-                lines.append(Line2D([0], [0], linestyle = ':', color = 'b', marker = 'o', markersize = markersize))
-                labels.append(r'$\hat\eta$')
+#             if i*j == 0 and mtype == "l2.":
+#                 lines.append(Line2D([0], [0], linestyle = ':', color = 'b', marker = 'o', markersize = markersize))
+#                 labels.append(r'$\hat\eta$')
             ax[i, j].legend(lines, labels, fontsize = fontsize)
             
     
@@ -345,6 +345,109 @@ def get_plot2(result, mtype):
         lines.append(Line2D([0], [0], linestyle = '-', color = col, marker = mk, markersize = markersize))
     for i in [0, 1, 2]:
         ax[i].legend(lines, labels, fontsize = fontsize)
+    
+    
+    return fig, ax
+
+
+
+def get_plot_threshold(result, lower = 3, upper = 8, shade = True):
+    
+    global outlier_dist
+    mpl.rcParams['text.usetex'] = True
+    mpl.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
+
+    fontsize = 15
+    labelsize = 18
+    markersize = 8
+
+    fig, ax = plt.subplots(1, 3, figsize = (14, 3.5), constrained_layout = True)
+
+
+
+
+    pars = {'m': 5}
+    index = 0
+    result1 = result
+    result1 = result1.loc[result1['eta.pre'] < 0]
+    result1 = result1.loc[result1['m'] == 5]
+    result1 = result1.loc[result1['s'] == 5]
+    result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
+    
+
+    ylab = r'$\hat\eta$'
+    col = 'b'
+    mk = 'o'
+    alpha_shade = 0.1
+    col_shade = 'g'
+
+
+    result2 = result1
+    msr = 'eta'
+    x = result2['n']
+    mean, std = result2[msr]['mean'], result2[msr]['std']
+    ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+    if shade:
+        ax[index].fill_between(x, lower, upper, alpha = alpha_shade, color = col_shade)
+        
+    ax[index].set_xscale('log')
+    #ax[index].set_yscale('log')
+    ax[index].set_xlabel('$n_k$', fontsize = labelsize)
+    ax[index].set_ylabel(ylab, labelpad = 0, fontsize = labelsize)
+    ax[index].set_xticklabels(x, fontsize = fontsize)
+    ax[index].set_xticks(x)
+    ax[index].tick_params(axis = 'y', labelsize = fontsize)
+
+
+
+    result1 = result
+    
+    result1 = result1.loc[result1['eta.pre'] < 0]
+    result1 = result1.loc[result['m'] != 5]
+    index = 1
+
+
+
+    result2 = result1
+    msr = 'eta'
+    x = result2['m']
+    mean, std = result2[msr]['mean'], result2[msr]['std']
+    ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+    if shade:
+        ax[index].fill_between(x, lower, upper, alpha = alpha_shade, color = col_shade)
+        
+    ax[index].set_xscale('log')
+    #ax[index].set_yscale('log')
+    ax[index].set_xlabel('$m$', fontsize = labelsize)
+    ax[index].set_xticks(x)
+    ax[index].set_xticklabels(x, fontsize = fontsize)
+    ax[index].tick_params(axis = 'y', labelsize = fontsize)
+
+
+    result1 = result
+    result1 = result1.loc[result1['eta.pre'] < 0]
+    result1 = result1.loc[result1['s'] != 5]
+    result1 = result1.loc[result1['outlier.dist'] == outlier_dist]
+    index = 2
+
+    
+
+    
+    result2 = result1
+    msr = 'eta'
+    x = result2['s']
+    mean, std = result2[msr]['mean'], result2[msr]['std']
+    ax[index].errorbar(x, mean, std, linestyle = ':', color = col, marker = mk, markersize = markersize)
+    if shade:
+        ax[index].fill_between(x, lower, upper, alpha = alpha_shade, color = col_shade)
+        
+    ax[index].set_xscale('log')
+    #ax[index].set_yscale('log')
+    ax[index].set_xlabel(r'$s$', fontsize = labelsize)
+    ax[index].set_xticks(x)
+    ax[index].set_xticklabels(x, fontsize = fontsize)
+    ax[index].tick_params(axis = 'y', labelsize = fontsize)
+    
     
     
     return fig, ax

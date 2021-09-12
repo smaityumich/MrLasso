@@ -147,11 +147,11 @@ instance.i <- function(n = 100, m = 5, d = 2000, s = 5, s.extra = 15,
 #   return(l2)
 # }
 
-il = 8
+il = 10
 v.n = c(200 * 2^(seq(-2, 2, by = 1)), rep(200, 5), rep(200, 5), rep(200, il))
 v.m = c(rep(5, 5), 4*(1.5)^(0:4), rep(5, 5), rep(5, il))
 v.s = c(rep(5, 5), rep(5, 5), 4 * (2)^(0:4), rep(5, il))
-v.eta = c(rep(-1, 5), rep(-1, 5), rep(-1, 5), seq(1, 15, by = 2))
+v.eta = c(rep(-1, 5), rep(-1, 5), rep(-1, 5), seq(1, 10, by = 1))
 
 pars = data.frame(m = v.m, n = v.n, s = v.s, eta = v.eta)
 
@@ -165,7 +165,7 @@ args = commandArgs(trailingOnly=TRUE)
 i = as.integer(args[1])
 
 
-index = i %/% 5 + 1
+index = i %/% 50 + 1
 m = as.integer(pars[index, 1])
 n = as.integer(pars[index, 2])
 s = as.integer(pars[index, 3])
@@ -180,7 +180,7 @@ if(m == 5)
   s.extra = 20
 }
 
-l2.list = instance.i(n = n, m = m, noise = 1, s = s, snr = 2,
+l2.list = instance.i(n = n, m = m, noise = 0.2, s = s, snr = 2,
                      s.extra = s.extra, seed = i+55999,
                      outlier.dist = od, d= 2000, eta.pre = eta.pre) 
 

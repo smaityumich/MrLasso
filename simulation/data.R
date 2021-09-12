@@ -2,7 +2,7 @@ library(Matrix)
 source('mrlasso.R')
 
 
-beta.values.1 <- function(mu, delta, eps = 0, sd = 2)
+beta.values.1 <- function(mu, delta, eps = 0, sd = 1.5)
 {
   z = rbinom(1, 1, 1-eps)
   if(z)
